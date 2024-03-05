@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "sql-python-model-dal"
+version = "0.1.0"
+description = ""
+authors = ["michael <msoikis@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pydantic = "^2.6.0"
+sqlmodel = "^0.0.14"
+pytest = "^8.0.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
