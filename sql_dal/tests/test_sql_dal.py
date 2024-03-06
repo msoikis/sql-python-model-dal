@@ -71,3 +71,17 @@ def test_get_by_dict(dal: SqlDal) -> None:
     assert dal.get_by_dict({"desc": "22", "index": 2}) == [tm2]
     assert dal.get_by_dict({"index": 1, "desc": "22"}) == []
     assert dal.get_by_dict({"d": "?"}) == []
+    assert dal.get_by_dict({}) == [tm1, tm2]
+
+
+def test_upsert(dal: SqlDal) -> None:
+    tm1 = Model(index=1, desc="11")
+    tm2 = Model(index=2, desc="22")
+    dal.add_list([tm1, tm2])
+    tm3 = Model(index=2, desc="33")
+    dal.upsert(tm3)
+    assert dal.get_by_key(2) == tm3
+    assert dal.get_all() == [tm1, tm3]
+    tm4 = Model(index=4, desc="44")
+    dal.upsert(tm4)
+    assert dal.get_all() == [tm1, tm3, tm4]
