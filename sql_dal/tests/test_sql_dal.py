@@ -6,7 +6,7 @@ import pydantic
 import pytest
 import sqlmodel
 
-from sql_dal.src.sql_dal import Dal, DalKeyNotFoundError
+from sql_dal.src.sql_dal import SqlDal, DalKeyNotFoundError
 from sql_dal.src.db_engine import connect_to_db_and_create_tables
 from sql_dal.src.link_to_db_model import generate_db_model
 
@@ -34,23 +34,23 @@ Model.__db_model__ = generate_db_model(Model)
 
 
 @pytest.fixture
-def dal() -> Dal:
+def dal() -> SqlDal:
     db_engine = connect_to_db_and_create_tables("sqlite:///:memory:")
-    return Dal(db_engine, Model)
+    return SqlDal(db_engine, Model)
 
 
-def test_get_all_empty(dal: Dal) -> None:
+def test_get_all_empty(dal: SqlDal) -> None:
     assert dal.get_all() == []
 
 
-def test_add_get_all(dal: Dal) -> None:
+def test_add_get_all(dal: SqlDal) -> None:
     tm_list = [Model(index=1), Model(index=2)]
     dal.add_list(tm_list)
     read_tms = dal.get_all()
     assert read_tms == tm_list
 
 
-def test_add_get_by_key(dal: Dal) -> None:
+def test_add_get_by_key(dal: SqlDal) -> None:
     tm = Model()
     dal.add(tm)
     read_tm = dal.get_by_key(FIRST_AUTO_INT_INDEX)
@@ -58,13 +58,13 @@ def test_add_get_by_key(dal: Dal) -> None:
     assert read_tm == tm
 
 
-def test_get_not_found(dal: Dal) -> None:
+def test_get_not_found(dal: SqlDal) -> None:
     with pytest.raises(DalKeyNotFoundError) as e:
         dal.get_by_key(FIRST_AUTO_INT_INDEX)
     print(f"\n{repr(e)} raised as expected")
 
 
-def test_get_by_dict(dal: Dal) -> None:
+def test_get_by_dict(dal: SqlDal) -> None:
     tm1 = Model(index=1, desc="11")
     tm2 = Model(index=2, desc="22")
     dal.add_list([tm1, tm2])

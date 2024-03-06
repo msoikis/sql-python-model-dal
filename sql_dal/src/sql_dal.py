@@ -13,7 +13,7 @@ class DalKeyNotFoundError(Exception):
     pass
 
 
-class Dal[T: pydantic.BaseModel]:
+class SqlDal[T: pydantic.BaseModel]:
     def __init__(self, db_engine: Engine, model: type[T]):
         self.db_engine = db_engine
         self.model = model
