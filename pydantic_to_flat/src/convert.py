@@ -15,7 +15,7 @@ def to_flat_model[T: pydantic.BaseModel](py_obj: pydantic.BaseModel, flat_model:
     flat_dict: dict[str, Any] = {
         key: _build_field_model(py_obj.__class__, key)(value).model_dump_json()
         if flat_model.model_fields[key].description == JSON_STR else value
-        for key, value in py_obj.dict().items()
+        for key, value in py_obj.model_dump().items()
     }
     return flat_model(**flat_dict)
 

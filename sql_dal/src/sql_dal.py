@@ -8,13 +8,6 @@ from sqlalchemy import Engine
 from pydantic_to_flat.src import convert
 from pydantic_to_flat.src.generate_flat_fields_definition import PydanticFieldDefinition
 
-"""
-TODO:
-1. add tests
-2. think how to implement simple generic use with single primary key and multiple primary keys
-3. think how to integrate the generic dal and the conversion for a simple usage from developer perspective
-"""
-
 
 class DalKeyNotFoundError(Exception):
     pass

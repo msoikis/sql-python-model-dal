@@ -24,19 +24,19 @@ class HelperStruct(pydantic.BaseModel):
 
 
 # @link_to_db_model
-class TestModel(pydantic.BaseModel):
+class Model(pydantic.BaseModel):
     index: Optional[int] = sqlmodel.Field(default=None, primary_key=True)
     d: dict[int, HelperStruct] = {0: HelperStruct()}
     desc: Optional[str] = None
 
 
-TestModel.__db_model__ = generate_db_model(TestModel)
+Model.__db_model__ = generate_db_model(Model)
 
 
 @pytest.fixture
 def dal() -> Dal:
     db_engine = connect_to_db_and_create_tables("sqlite:///:memory:")
-    return Dal(db_engine, TestModel)
+    return Dal(db_engine, Model)
 
 
 def test_get_all_empty(dal: Dal) -> None:
@@ -44,14 +44,14 @@ def test_get_all_empty(dal: Dal) -> None:
 
 
 def test_add_get_all(dal: Dal) -> None:
-    tm_list = [TestModel(index=1), TestModel(index=2)]
+    tm_list = [Model(index=1), Model(index=2)]
     dal.add_list(tm_list)
     read_tms = dal.get_all()
     assert read_tms == tm_list
 
 
 def test_add_get_by_key(dal: Dal) -> None:
-    tm = TestModel()
+    tm = Model()
     dal.add(tm)
     read_tm = dal.get_by_key(FIRST_AUTO_INT_INDEX)
     tm.index = FIRST_AUTO_INT_INDEX
@@ -65,8 +65,8 @@ def test_get_not_found(dal: Dal) -> None:
 
 
 def test_get_by_dict(dal: Dal) -> None:
-    tm1 = TestModel(index=1, desc="11")
-    tm2 = TestModel(index=2, desc="22")
+    tm1 = Model(index=1, desc="11")
+    tm2 = Model(index=2, desc="22")
     dal.add_list([tm1, tm2])
     assert dal.get_by_dict({"desc": "22", "index": 2}) == [tm2]
     assert dal.get_by_dict({"index": 1, "desc": "22"}) == []
