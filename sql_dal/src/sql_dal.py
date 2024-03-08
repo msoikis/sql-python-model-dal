@@ -67,6 +67,9 @@ class SqlDal[T: pydantic.BaseModel]:
             assert hasattr(self, "key_field_name"), f"{self.model} has no single key field defined"
             return get_by_keys_dict({self.key_field_name: key})
 
+    def get_by_keys_list(self, keys_list: list[...]) -> list[T]:
+        return [self.get_by_key(key) for key in keys_list]
+
     def add(self, record: T) -> None:
         logging.debug(f"Adding record to DB: {record}")
         assert isinstance(record, self.model)
@@ -97,14 +100,30 @@ class SqlDal[T: pydantic.BaseModel]:
                 session.merge(convert.to_flat_model(record, record.__db_model__))
             session.commit()
 
-    def delete_by_dict(self, dict_arg: dict) -> None:
-        ...
+    def delete_by_dict(self, args_dict: dict) -> None:
+        with sqlmodel.Session(self.db_engine) as session:
+            statement = sqlmodel.delete(self.model.__db_model__)
+            for key, value in args_dict.items():
+                statement = statement.where(getattr(self.model.__db_model__, key) == value)
+            session.exec(statement)
+            session.commit()
 
     def delete_all(self) -> None:
         self.delete_by_dict({})
 
     def delete_record(self, record: T) -> None:
-        ...
+        assert isinstance(record, self.model)
+        self.delete_by_dict(convert.to_flat_model(record, record.__db_model__))
 
     def delete_by_key(self, key: ...) -> None:
-        ...
+        if isinstance(key, dict):
+            self.delete_by_dict(key)
+        elif isinstance(key, pydantic.BaseModel):
+            self.delete_by_dict(key.model_dump())
+        else:
+            assert hasattr(self, "key_field_name"), f"{self.model} has no single key field defined"
+            self.delete_by_dict({self.key_field_name: key})
+
+    def delete_by_keys_list(self, keys_list: list[...]) -> None:
+        for key in keys_list:
+            self.delete_by_key(key)
