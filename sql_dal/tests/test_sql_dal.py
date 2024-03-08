@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 
 from sql_dal.src.sql_dal import SqlDal, DalKeyNotFoundError
 from sql_dal.src.db_engine import connect_to_db_and_create_tables
-from sql_dal.src.link_to_db_model import generate_db_model
+from sql_dal.src.generate_db_model import generate_db_model
 
 FIRST_AUTO_INT_INDEX = 1
 
@@ -24,14 +24,13 @@ class HelperStruct(pydantic.BaseModel):
     e: Optional[MyEnum] = None
 
 
-# @link_to_db_model
 class Model(pydantic.BaseModel):
     index: Optional[int] = sqlmodel.Field(default=None, primary_key=True)
     d: dict[int, HelperStruct] = {0: HelperStruct()}
     desc: Optional[str] = None
 
 
-Model.__db_model__ = generate_db_model(Model)
+generate_db_model(Model)
 
 
 @pytest.fixture

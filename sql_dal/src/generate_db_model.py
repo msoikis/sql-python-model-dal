@@ -4,16 +4,24 @@ from pydantic_to_flat.src.generate_flat_fields_definition import generate_flat_f
     validate_flat_pydantic_model, JSON_STR
 
 
-def link_to_db_model[T: type[pydantic.BaseModel]](cls: T) -> T:
+def generate_db_model[T: type[pydantic.BaseModel]](cls: T) -> T:
     """
-    This function is intended to be used as a class decorator for Pydantic classes.
-    It auto-generates a flat Pydantic DbModel and saves it in __db_model__ class property.
+    This function should be called immediately after pydantic.BaseModel class definition.
+    It generates a flat Pydantic SqlModel and saves it in __db_model__ class property.
+
+    Usage example:
+
+    class Model(pydantic.BaseModel):
+        index: Optional[int] = sqlmodel.Field(default=None, primary_key=True)
+        d: dict[int, str]
+
+    generate_db_model(Model)
     """
-    cls.__db_model__ = generate_db_model(cls)
+    cls.__db_model__ = _create_db_model(cls)
     return cls
 
 
-def generate_db_model(cls: type[pydantic.BaseModel]) -> type[sqlmodel.SQLModel]:
+def _create_db_model(cls: type[pydantic.BaseModel]) -> type[sqlmodel.SQLModel]:
     db_model = pydantic.create_model(
         f"{cls.__name__}DbModel",
         __base__=sqlmodel.SQLModel,
