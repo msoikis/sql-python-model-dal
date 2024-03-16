@@ -6,7 +6,7 @@ import sqlmodel
 from sqlalchemy import Engine
 
 from pydantic_to_flat.src import convert
-from pydantic_to_flat.src.generate_flat_fields_definition import PydanticFieldDefinition
+from pydantic_to_flat.src.create_flat_model import PydanticFieldDefinition
 
 
 class DalKeyNotFoundError(Exception):

@@ -1,6 +1,7 @@
 from datetime import datetime
 from enum import StrEnum
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 import pydantic
 import pytest
@@ -20,7 +21,7 @@ class MyEnum(StrEnum):
 
 
 class HelperStruct(pydantic.BaseModel):
-    dt: datetime = datetime.now()
+    dt: datetime = datetime.now(ZoneInfo("UTC"))
     e: Optional[MyEnum] = None
 
 
@@ -30,7 +31,7 @@ class Model(pydantic.BaseModel):
     desc: Optional[str] = None
 
 
-generate_db_model(Model)
+generate_db_model(Model, to_timezone="UTC")
 
 
 @pytest.fixture

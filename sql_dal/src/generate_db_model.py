@@ -1,10 +1,10 @@
 import pydantic
 import sqlmodel
-from pydantic_to_flat.src.generate_flat_fields_definition import generate_flat_fields_definition_dict, \
-    validate_flat_pydantic_model, JSON_STR
+from pydantic_to_flat.src.create_flat_model import generate_flat_fields_definition_dict, \
+    validate_flat_pydantic_model
 
 
-def generate_db_model[T: type[pydantic.BaseModel]](cls: T) -> T:
+def generate_db_model[T: type[pydantic.BaseModel]](cls: T, to_timezone: str = "") -> T:
     """
     This function should be called immediately after pydantic.BaseModel class definition.
     It generates a flat Pydantic SqlModel and saves it in __db_model__ class property.
@@ -17,24 +17,17 @@ def generate_db_model[T: type[pydantic.BaseModel]](cls: T) -> T:
 
     generate_db_model(Model)
     """
-    cls.__db_model__ = _create_db_model(cls)
+    cls.__db_model__ = _create_db_model(cls, to_timezone)
     return cls
 
 
-def _create_db_model(cls: type[pydantic.BaseModel]) -> type[sqlmodel.SQLModel]:
+def _create_db_model(cls: type[pydantic.BaseModel], to_timezone: str = "") -> type[sqlmodel.SQLModel]:
     db_model = pydantic.create_model(
         f"{cls.__name__}DbModel",
         __base__=sqlmodel.SQLModel,
         __cls_kwargs__={"table": True},
         __tablename__=cls.__name__,
-        **generate_flat_fields_definition_dict(cls),
+        **generate_flat_fields_definition_dict(cls, to_timezone),
     )
-    validate_db_model(db_model)
-    return db_model
-
-
-def validate_db_model(db_model: type[pydantic.BaseModel]) -> None:
     validate_flat_pydantic_model(db_model)
-    for field_info in db_model.model_fields.values():
-        # JSON flat fields are not allowed, for now, to be defined as primary keys
-        assert not (field_info.description == JSON_STR and hasattr(field_info, "primary_key"))
+    return db_model
