@@ -7,8 +7,8 @@ from zoneinfo import ZoneInfo
 import pydantic
 import pytest
 
-from pydantic_to_flat.src import convert
-from pydantic_to_flat.src.create_flat_model import create_flat_model
+from pydantic_db_model.pydantic_to_flat.src import convert
+from pydantic_db_model.pydantic_to_flat.src.create_flat_model import create_flat_model
 
 
 class BasicTypesModel(pydantic.BaseModel):
@@ -66,7 +66,7 @@ class NestedPydanticModel(pydantic.BaseModel):
     ids=[f"{repr(obj)}, {timezone=}" for obj, timezone in test_objects]  # prints the tested objects for each case
 )
 def test_pydantic_to_flat(py_obj: pydantic.BaseModel, fixed_timezone: str):
-    flat_model = create_flat_model(py_obj.__class__, fixed_timezone=fixed_timezone)
+    flat_model = create_flat_model(py_obj.__class__)
     print_flat_model(flat_model)
     flat_obj = convert.to_flat_model(py_obj, flat_model)
     print(f'\n{py_obj=}')

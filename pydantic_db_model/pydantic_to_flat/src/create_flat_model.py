@@ -18,7 +18,6 @@ _DEFAULT_FLAT_TYPES = (bool, int, float, str, bytes, NoneType, datetime)
 # The following keys are stored in pydantic model's FieldInfo.json_schema_extra
 # to mark a field as json or datetime with fixed timezone:
 JSON_KEY_MARK = "json"
-FIXED_TIMEZONE_KEY_MARK = "fixed_timezone"
 
 
 _JSON_FIELD_DEFINITION: PydanticFieldDefinition = (
@@ -29,13 +28,13 @@ _JSON_FIELD_DEFINITION: PydanticFieldDefinition = (
 )
 
 
-def create_flat_model(cls: type[pydantic.BaseModel], fixed_timezone: str = "") -> type[pydantic.BaseModel]:
+def create_flat_model(cls: type[pydantic.BaseModel]) -> type[pydantic.BaseModel]:
     """
     Returns a flat pydantic model, dynamically generated from a given pydantic.BaseModel class
     """
     flat_model = pydantic.create_model(
         f"{cls.__name__}FlatModel",
-        **generate_flat_fields_definition_dict(cls, fixed_timezone),
+        **generate_flat_fields_definition_dict(cls),
     )
     validate_flat_pydantic_model(flat_model)
     return flat_model
@@ -43,7 +42,6 @@ def create_flat_model(cls: type[pydantic.BaseModel], fixed_timezone: str = "") -
 
 def generate_flat_fields_definition_dict(
         cls: type[pydantic.BaseModel],
-        fixed_timezone: str = "",
         flat_types: tuple = _DEFAULT_FLAT_TYPES
 ) -> dict[str, PydanticFieldDefinition]:
     """
@@ -51,24 +49,13 @@ def generate_flat_fields_definition_dict(
     Flat fields (recognized by their type, which must be one of 'flat_types'), keep their annotation & info.
     Composite fields (with type other than 'flat_types'), are flattened into a '_JSON_FIELD_DEFINITION'.
     """
-    def set_fixed_timezone_in_field_info(field_info: FieldInfo) -> None:
-        if field_info.json_schema_extra is None:
-            field_info.json_schema_extra = {FIXED_TIMEZONE_KEY_MARK: fixed_timezone}
-        else:
-            field_info.json_schema_extra[FIXED_TIMEZONE_KEY_MARK] = fixed_timezone
-
     def is_flat_field_type(field_info: FieldInfo) -> bool:
         return is_type_included(field_info.annotation, flat_types)
-
-    def is_datetime_type(field_info: FieldInfo) -> bool:
-        return is_type_included(field_info.annotation, (datetime,))
 
     flat_definition = dict({})
     for field_name, field_info in cls.model_fields.items():
         if is_flat_field_type(field_info):
             flat_definition[field_name] = (field_info.annotation, field_info)
-            if fixed_timezone and is_datetime_type(field_info):
-                set_fixed_timezone_in_field_info(field_info)
         else:
             flat_definition[field_name] = _JSON_FIELD_DEFINITION
     return flat_definition

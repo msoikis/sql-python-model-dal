@@ -7,10 +7,10 @@ import sqlmodel
 from sqlalchemy import Column, TIMESTAMP, text
 from sqlmodel import Field
 
-from pydantic_to_flat.src import convert
-from sql_dal.src.db_engine import connect_to_db_and_create_tables
-from sql_dal.src.generate_db_model import generate_db_model
-from sql_dal.src.sql_dal import SqlDal
+from pydantic_db_model.pydantic_db_model import generate_db_model
+from pydantic_db_model.pydantic_to_flat.src import convert
+from db_dal.src.db_engine import connect_to_db_and_create_tables
+from db_dal.src.db_dal import DbDal
 
 
 class PersonModel(pydantic.BaseModel):
@@ -34,10 +34,10 @@ class PersonModel(pydantic.BaseModel):
     # ))
 
 
-generate_db_model(PersonModel)
+generate_db_model(PersonModel, "Israel")
 
 
-class PersonDal(SqlDal):
+class PersonDal(DbDal):
     def get_by_hobby(self, hobby: str) -> list[PersonModel]:
         """
         Example for a query filter:
