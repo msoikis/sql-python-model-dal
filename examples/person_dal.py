@@ -16,7 +16,7 @@ class PersonModel(pydantic.BaseModel):
     created_datetime: datetime = datetime.now(ZoneInfo("UTC"))
 
 
-generate_db_model(PersonModel, "UTC")
+generate_db_model(PersonModel, ZoneInfo("UTC"))
 
 
 class PersonDal(DbDal):
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     p1 = PersonModel(id="1", name="John", hobbies=["fishing", "hiking"])
     p2 = PersonModel(id="2", name="Jane", hobbies=["swimming", "hiking"])
     dal.add_list([p1, p2])
-
+    print(f'get by id=1: {dal.get_by_key("1")}')
     print(f'Hiking: {dal.get_by_hobby("hiking")}')
     print(f'Swimming: {dal.get_by_hobby("swimming")}')
     print(f'Flying: {dal.get_by_hobby("flying")}')
