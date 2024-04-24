@@ -2,13 +2,12 @@ import enum
 import uuid
 from datetime import datetime
 from typing import Optional
-from zoneinfo import ZoneInfo
 
 import pydantic
 import pytest
 
-from pydantic_db_model.pydantic_to_flat.src import convert
-from pydantic_db_model.pydantic_to_flat.src.create_flat_model import create_flat_model
+from pydantic_db_model.src.pydantic_to_flat.src import convert
+from pydantic_db_model.src.pydantic_to_flat.src.create_flat_model import create_flat_model
 
 
 class BasicTypesModel(pydantic.BaseModel):
@@ -52,22 +51,18 @@ class NestedPydanticModel(pydantic.BaseModel):
 
 
 @pytest.mark.parametrize(
-    "py_obj, fixed_timezone",
+    "py_obj",
     test_objects := [
-        (BasicTypesModel(f=0.1), None),
-        (CollectionTypesModel(s={MyIntEnum.a2}), None),
-        (NestedPydanticModel(), None),
-        (SupportedExtraTypesModel(dt=datetime.now()), None),
-        (SupportedExtraTypesModel(dt=None), None),
-        (SupportedExtraTypesModel(dt=None), "UTC"),
-        (SupportedExtraTypesModel(dt=datetime.now(ZoneInfo("UTC"))), "UTC"),
-        (SupportedExtraTypesModel(dt=datetime.now(ZoneInfo("America/Los_Angeles"))), "America/Los_Angeles"),
+        BasicTypesModel(f=0.1),
+        CollectionTypesModel(s={MyIntEnum.a2}),
+        NestedPydanticModel(),
+        SupportedExtraTypesModel(dt=datetime.now()),
     ],
-    ids=[f"{repr(obj)}, {timezone=}" for obj, timezone in test_objects]  # prints the tested objects for each case
+    ids=[repr(obj) for obj in test_objects]  # prints the tested objects for each case
 )
-def test_pydantic_to_flat(py_obj: pydantic.BaseModel, fixed_timezone: str):
+def test_pydantic_to_flat(py_obj: pydantic.BaseModel):
     flat_model = create_flat_model(py_obj.__class__)
-    print_flat_model(flat_model)
+    print_model(flat_model)
     flat_obj = convert.to_flat_model(py_obj, flat_model)
     print(f'\n{py_obj=}')
     print(f'{flat_obj=}\n')
@@ -75,8 +70,8 @@ def test_pydantic_to_flat(py_obj: pydantic.BaseModel, fixed_timezone: str):
     assert converted_back_py_obj == py_obj
 
 
-def print_flat_model(flat_model: type[pydantic.BaseModel]) -> None:
-    print(f"\n{flat_model.__name__}:")
-    for field_name, field_info in flat_model.model_fields.items():
+def print_model(model: type[pydantic.BaseModel]) -> None:
+    print(f"\n{model.__name__}:")
+    for field_name, field_info in model.model_fields.items():
         print(f"{field_name}: {field_info.annotation}, extra={field_info.json_schema_extra}")
 

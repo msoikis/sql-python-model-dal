@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 
 from db_dal.src.db_dal import DbDal, DalKeyNotFoundError
 from db_dal.src.db_engine import connect_to_db_and_create_tables
-from pydantic_db_model.pydantic_db_model import generate_db_model
+from pydantic_db_model.src.pydantic_db_model import generate_db_model
 
 FIRST_AUTO_INT_INDEX = 1
 

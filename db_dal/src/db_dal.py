@@ -5,8 +5,8 @@ import pydantic
 import sqlmodel
 from sqlalchemy import Engine
 
-from pydantic_db_model.pydantic_db_model import db_model_to_pydantic, pydantic_to_db_model
-from pydantic_db_model.pydantic_to_flat.src import PydanticFieldDefinition
+from pydantic_db_model.src.pydantic_db_model import db_model_to_pydantic, pydantic_to_db_model
+from pydantic_db_model.src.pydantic_to_flat.src.create_flat_model import PydanticFieldDefinition
 
 
 class DalKeyNotFoundError(Exception):
@@ -39,7 +39,7 @@ class DbDal[T: pydantic.BaseModel]:
                 statement = statement.where(getattr(self.model.__db_model__, key) == value)
             db_results = session.exec(statement).all()
             assert isinstance(db_results, list)
-            return [db_model_to_pydantic(result, self.model) for result in db_results]
+            return [db_model_to_pydantic(result) for result in db_results]
 
     def get_by_key(self, key: ...) -> T:
         def validate_key_fields(keys_dict: dict[str, Any]) -> None:

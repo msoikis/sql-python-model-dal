@@ -1,40 +1,22 @@
 from datetime import datetime
-from typing import Optional
 from zoneinfo import ZoneInfo
 
 import pydantic
 import sqlmodel
-from sqlalchemy import Column, TIMESTAMP, text
-from sqlmodel import Field
-
-from pydantic_db_model.pydantic_db_model import generate_db_model
-from pydantic_db_model.pydantic_to_flat.src import convert
+from pydantic_db_model.src.pydantic_db_model import generate_db_model
 from db_dal.src.db_engine import connect_to_db_and_create_tables
 from db_dal.src.db_dal import DbDal
+from pydantic_db_model.src.pydantic_to_flat.src.convert import from_flat_model
 
 
 class PersonModel(pydantic.BaseModel):
     id: str = sqlmodel.Field(primary_key=True)
     name: str
-    dt1: datetime
     hobbies: list[str]
-    created_datetime: Optional[datetime] = Field(
-        sa_column=Column(
-            TIMESTAMP(timezone=True),
-            nullable=True,
-            server_default=text("CURRENT_TIMESTAMP"),
-        ),
-        default=None,
-    )
-    # updated_datetime: Optional[datetime] = Field(sa_column=Column(
-    #     TIMESTAMP(timezone=True),
-    #     nullable=False,
-    #     server_default=text("CURRENT_TIMESTAMP"),
-    #     server_onupdate=text("CURRENT_TIMESTAMP"),
-    # ))
+    created_datetime: datetime = datetime.now(ZoneInfo("UTC"))
 
 
-generate_db_model(PersonModel, "Israel")
+generate_db_model(PersonModel, "UTC")
 
 
 class PersonDal(DbDal):
@@ -49,27 +31,17 @@ class PersonDal(DbDal):
             db_model = self.model.__db_model__
             statement = sqlmodel.select(db_model).where(db_model.hobbies.contains(f'"{hobby}"'))
             db_results = session.exec(statement).all()
-            return [convert.from_flat_model(result, self.model) for result in db_results]
+            return [from_flat_model(result, self.model) for result in db_results]
 
 
 if __name__ == "__main__":
     db_engine = connect_to_db_and_create_tables("sqlite:///person_example.db")
     dal = PersonDal(db_engine, PersonModel)
     dal.delete_all()
-    p1 = PersonModel(id="1", name="John", dt1=datetime.now(tz=ZoneInfo("UTC")), created_datetime=datetime(2020, 1, 1, 10, 20, tzinfo=ZoneInfo("Israel")), hobbies=["fishing", "hiking"])
-    print(f"{p1.dt1=}")
-    # p2 = PersonModel(id="2", name="Jane", birth_date=datetime.date(1991, 1, 1), hobbies=["swimming", "hiking"])
-    dal.add_list([p1])
-    pp = dal.get_by_hobby("fishing")
-    # print(pp)
-    p2 = pp[0]
-    print(f"{p2.dt1=}")
-    print(f"{p2.dt1.replace(tzinfo=ZoneInfo("Israel"))=}")
-    print(f"{p2.dt1.astimezone(ZoneInfo("Israel"))=}")
+    p1 = PersonModel(id="1", name="John", hobbies=["fishing", "hiking"])
+    p2 = PersonModel(id="2", name="Jane", hobbies=["swimming", "hiking"])
+    dal.add_list([p1, p2])
 
-
-
-
-    # print(f'Hiking: {dal.get_by_hobby("hiking")}')
-    # print(f'Swimming: {dal.get_by_hobby("swimming")}')
-    # print(f'Flying: {dal.get_by_hobby("flying")}')
+    print(f'Hiking: {dal.get_by_hobby("hiking")}')
+    print(f'Swimming: {dal.get_by_hobby("swimming")}')
+    print(f'Flying: {dal.get_by_hobby("flying")}')

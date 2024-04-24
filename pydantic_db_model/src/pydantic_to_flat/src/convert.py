@@ -13,7 +13,7 @@ def to_flat_model[T: pydantic.BaseModel](py_obj: pydantic.BaseModel, flat_model:
     For each target flat field (recognized by field json_schema_extra "json" key),
     the source field is converted into json represented string.
     """
-    def convert_to_json(value: Any) -> str:
+    def convert_to_json(key: str, value: Any) -> str:
         return _build_field_model(py_obj.__class__, key)(value).model_dump_json()
 
     assert isinstance(py_obj, pydantic.BaseModel), f"py_obj={repr(py_obj)} must be a pydantic.BaseModel class/subclass"
@@ -21,7 +21,7 @@ def to_flat_model[T: pydantic.BaseModel](py_obj: pydantic.BaseModel, flat_model:
     flat_dict = dict({})
     for key, value in py_obj.model_dump().items():
         if is_json_str_field(flat_model.model_fields[key]):
-            flat_dict[key] = convert_to_json(value)
+            flat_dict[key] = convert_to_json(key, value)
         else:
             flat_dict[key] = value
     return flat_model(**flat_dict)

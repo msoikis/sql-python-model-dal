@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 from types import NoneType, UnionType
 from typing import Any, _UnionGenericAlias
 
@@ -10,7 +11,7 @@ PydanticFieldDefinition = tuple[type, FieldInfo]
 # Used to create pydantic BaseModel dynamically
 
 
-_DEFAULT_FLAT_TYPES = (bool, int, float, str, bytes, NoneType, datetime)
+_DEFAULT_FLAT_TYPES = (bool, int, float, str, bytes, NoneType, datetime, Enum)
 # Used to check whether a field has a flat type or a composite one.
 # Composite includes lists, dicts, pydantic classes
 
