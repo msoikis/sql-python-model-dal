@@ -5,19 +5,19 @@ import pydantic
 import sqlmodel
 from sqlalchemy import Engine
 
-from pydantic_to_flat.src import convert
-from pydantic_to_flat.src.generate_flat_fields_definition import PydanticFieldDefinition
+from pydantic_db_model.src.pydantic_db_model import db_model_to_pydantic, pydantic_to_db_model
+from pydantic_db_model.src.pydantic_to_flat.src.create_flat_model import PydanticFieldDefinition
 
 
 class DalKeyNotFoundError(Exception):
     pass
 
 
-class SqlDal[T: pydantic.BaseModel]:
+class DbDal[T: pydantic.BaseModel]:
     def __init__(self, db_engine: Engine, model: type[T]):
         self.db_engine = db_engine
         self.model = model
-        assert hasattr(model, "__db_model__")
+        assert hasattr(model, "__db_model__"), f"Use generate_db_model({model.__name__}) after class definition to create and link it to a db_model"
         self.key_fields = self.get_key_fields()
         if len(self.key_fields) == 1:
             self.key_field_name = list(self.key_fields.keys())[0]
@@ -33,14 +33,13 @@ class SqlDal[T: pydantic.BaseModel]:
         return self.get_by_dict({})
 
     def get_by_dict(self, args_dict: dict[str, Any]) -> list[T]:
-        logging.debug(f"Getting records from DB filtered by {args_dict}")
         with sqlmodel.Session(self.db_engine) as session:
             statement = sqlmodel.select(self.model.__db_model__)
             for key, value in args_dict.items():
                 statement = statement.where(getattr(self.model.__db_model__, key) == value)
             db_results = session.exec(statement).all()
             assert isinstance(db_results, list)
-            return [convert.from_flat_model(result, self.model) for result in db_results]
+            return [db_model_to_pydantic(result) for result in db_results]
 
     def get_by_key(self, key: ...) -> T:
         def validate_key_fields(keys_dict: dict[str, Any]) -> None:
@@ -74,7 +73,7 @@ class SqlDal[T: pydantic.BaseModel]:
         logging.debug(f"Adding record to DB: {record}")
         assert isinstance(record, self.model)
         with sqlmodel.Session(self.db_engine) as session:
-            session.add(convert.to_flat_model(record, record.__db_model__))
+            session.add(pydantic_to_db_model(record))
             session.commit()
         logging.debug("Record added to DB! \n")
 
@@ -83,21 +82,21 @@ class SqlDal[T: pydantic.BaseModel]:
         with sqlmodel.Session(self.db_engine) as session:
             for record in records:
                 assert isinstance(record, self.model)
-                session.add(convert.to_flat_model(record, record.__db_model__))
+                session.add(pydantic_to_db_model(record))
             session.commit()
         logging.debug("Records added to DB! \n")
 
     def upsert(self, record: T) -> None:
         assert isinstance(record, self.model)
         with sqlmodel.Session(self.db_engine) as session:
-            session.merge(convert.to_flat_model(record, record.__db_model__))
+            session.merge(pydantic_to_db_model(record))
             session.commit()
 
     def upsert_list(self, records: list[T]) -> None:
         with sqlmodel.Session(self.db_engine) as session:
             for record in records:
                 assert isinstance(record, self.model)
-                session.merge(convert.to_flat_model(record, record.__db_model__))
+                session.merge(pydantic_to_db_model(record))
             session.commit()
 
     def delete_by_dict(self, args_dict: dict) -> None:
@@ -113,7 +112,7 @@ class SqlDal[T: pydantic.BaseModel]:
 
     def delete_record(self, record: T) -> None:
         assert isinstance(record, self.model)
-        self.delete_by_dict(convert.to_flat_model(record, record.__db_model__))
+        self.delete_by_dict(pydantic_to_db_model(record).model_dump())
 
     def delete_by_key(self, key: ...) -> None:
         if isinstance(key, dict):
